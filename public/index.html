@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EcoAlerta 2.0</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="hero">
+  <div><h1>Eco<span>Alerta</span></h1><p>Gestión y seguimiento de incidencias ambientales</p></div>
+  <nav><a href="#reportar">Reportar</a><a href="#mapa">Mapa</a><button id="btnSeguimiento">Seguimiento</button><button id="btnAdmin" class="dark">Administración</button></nav>
+</header>
+
+<main>
+<section class="intro">
+  <div><span class="tag">EcoAlerta 2.0</span><h2>Tu reporte puede convertirse en una acción.</h2><p>Registra una incidencia, conserva tu código de seguimiento y consulta el avance hasta su atención.</p></div>
+  <div class="flow"><b>📸 Reporta</b><b>🎫 Genera ticket</b><b>📍 Ubica</b><b>🔄 Da seguimiento</b></div>
+</section>
+
+<section id="reportar" class="card">
+<h2>Reportar una incidencia</h2><p class="muted">Completa la información para registrar el caso.</p>
+<form id="reporteForm">
+<div class="grid">
+<label>Nombre completo<input name="nombre" required></label>
+<label>Correo electrónico<input type="email" name="email" required></label>
+<label>Teléfono (opcional)<input type="tel" name="telefono"></label>
+<label>Tipo de reporte<select name="tipo" required><option value="">Selecciona</option><option>Residuos Plásticos</option><option>Residuos Orgánicos</option><option>Residuos Metálicos</option><option>Contaminación Sónica</option><option>Residuos Pluviales</option><option>Acumulación de basura</option></select></label>
+<label class="wide">Ubicación<select name="ubicacion" id="ubicacion" required><option value="">Selecciona</option><option>Parque Duarte, Moca, República Dominicana</option><option>Calle 27 de Febrero, Moca, República Dominicana</option><option>Calle Independencia, Moca, República Dominicana</option><option>Hospital Municipal de Fantino, República Dominicana</option><option>Calle Restauración, Fantino, República Dominicana</option><option>Parque Central, Santiago, República Dominicana</option></select></label>
+<label class="wide">Descripción<textarea name="descripcion" rows="3" placeholder="Describe brevemente la situación"></textarea></label>
+<label class="wide">Evidencia fotográfica<input type="file" name="foto" accept="image/*"></label>
+</div><button class="primary" type="submit">Enviar reporte</button>
+</form>
+</section>
+
+<section id="mapa" class="card"><h2>Mapa de reportes</h2><div id="map"></div></section>
+</main>
+
+<div class="modal" id="ticketModal"><div class="modalbox"><button class="x">×</button><h2>✅ Reporte registrado</h2><p>Guarda este código para consultar el estado:</p><div class="ticket" id="codigoGenerado"></div></div></div>
+
+<div class="modal" id="seguimientoModal"><div class="modalbox large"><button class="x">×</button><h2>Seguimiento de reporte</h2><div class="search"><input id="codigoBusqueda" placeholder="EA-XXXXXXXXXX"><button id="buscarTicket">Buscar</button></div><div id="detalleTicket"></div></div></div>
+
+<div class="modal" id="loginModal"><div class="modalbox loginbox"><button class="x">×</button>
+<h2>Acceso administrativo</h2><p class="muted">Área reservada para personal autorizado.</p>
+<label>Usuario<input id="loginUsuario" autocomplete="username"></label>
+<label>Contraseña<input id="loginPassword" type="password" autocomplete="current-password"></label>
+<p id="loginError" class="error"></p><button id="loginBtn" class="primary">Iniciar sesión</button>
+<p class="demo-note"><b>Acceso inicial de desarrollo:</b> admin / EcoAlerta2026!</p>
+</div></div>
+
+<div class="modal" id="adminModal"><div class="modalbox admin"><button class="x">×</button>
+<div class="admin-title"><div><h2>Centro de Gestión EcoAlerta</h2><p class="muted">Administración y seguimiento de incidencias</p></div><button id="logoutBtn" class="secondary">Cerrar sesión</button></div>
+<div id="stats" class="stats"></div>
+<div class="filters"><input id="filtroQ" placeholder="Buscar código, ubicación o responsable">
+<select id="filtroEstado"><option value="">Todos los estados</option><option>Reporte recibido</option><option>Reporte en evaluación</option><option>Asignado</option><option>Reporte en ejecución</option><option>Reporte atendido</option><option>Cerrado</option></select>
+<select id="filtroPrioridad"><option value="">Todas las prioridades</option><option>Baja</option><option>Media</option><option>Alta</option><option>Crítica</option></select>
+<button id="filtrarBtn" class="secondary">Filtrar</button></div>
+<div class="admin-grid"><div><h3>Reportes registrados</h3><div id="tablaReportes"></div></div>
+<div class="editor"><h3>Detalle y gestión</h3><div id="detalleAdmin" class="detail-empty">Selecciona un ticket de la lista.</div>
+<input id="adminCodigo" type="hidden">
+<label>Estado<select id="adminEstado"><option>Reporte recibido</option><option>Reporte en evaluación</option><option>Asignado</option><option>Reporte en ejecución</option><option>Reporte atendido</option><option>Cerrado</option></select></label>
+<label>Prioridad<select id="adminPrioridad"><option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option></select></label>
+<label>Responsable<input id="adminResponsable" placeholder="Responsable / brigada"></label>
+<label>Observación<textarea id="adminObservacion" rows="3" placeholder="Observación de la gestión"></textarea></label>
+<button id="guardarGestion" class="primary">Guardar actualización</button></div></div>
+</div></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="app.js"></script>
+</body></html>

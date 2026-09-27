@@ -1,0 +1,26 @@
+const map=L.map("map").setView([19.5665,-70.6266],13);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+const $=s=>document.querySelector(s);
+document.querySelectorAll(".x").forEach(x=>x.onclick=()=>x.closest(".modal").classList.remove("show"));
+document.querySelectorAll(".modal").forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove("show")});
+async function api(url,opt={}){const r=await fetch(url,opt);let d;try{d=await r.json()}catch{d={error:"Respuesta inválida del servidor."}};if(!r.ok)throw Object.assign(new Error(d.error||"Error"),{status:r.status});return d}
+async function geocode(u,t,c){try{const d=await(await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(u))).json();if(d[0]){let lat=+d[0].lat,lon=+d[0].lon;L.marker([lat,lon]).addTo(map).bindPopup(`<b>${c}</b><br>${u}<br>${t}`);map.setView([lat,lon],15)}}catch{}}
+$("#reporteForm").addEventListener("submit",async e=>{e.preventDefault();try{const fd=new FormData(e.target),d=await api("/api/reportes",{method:"POST",body:fd});$("#codigoGenerado").textContent=d.codigo;$("#ticketModal").classList.add("show");localStorage.setItem("ecoUltimoCodigo",d.codigo);geocode(fd.get("ubicacion"),fd.get("tipo"),d.codigo);e.target.reset()}catch(err){alert(err.message)}});
+$("#btnSeguimiento").onclick=()=>{$("#codigoBusqueda").value=localStorage.getItem("ecoUltimoCodigo")||"";$("#seguimientoModal").classList.add("show")};
+$("#buscarTicket").onclick=()=>cargarTicket($("#codigoBusqueda").value.trim());
+async function cargarTicket(c){if(!c)return;try{const d=await api("/api/reportes/"+encodeURIComponent(c));$("#detalleTicket").innerHTML=`<h3>${d.codigo}</h3><p><b>Estado:</b> ${d.estado_actual}</p><p><b>Ubicación:</b> ${d.ubicacion}</p><p><b>Tipo:</b> ${d.tipo}</p><p><b>Prioridad:</b> ${d.prioridad}</p><div class="timeline">${d.historial.map(h=>`<div class="event"><b>${h.estado}</b><br><small>${new Date(h.fecha).toLocaleString()}</small>${h.observacion?`<p>${h.observacion}</p>`:""}</div>`).join("")}</div>`}catch(e){$("#detalleTicket").innerHTML="<p>"+e.message+"</p>"}}
+
+$("#btnAdmin").onclick=async()=>{try{const s=await api("/api/admin/session");if(s.authenticated){$("#adminModal").classList.add("show");cargarAdmin()}else{$("#loginModal").classList.add("show")}}catch(e){alert(e.message)}};
+$("#loginBtn").onclick=async()=>{try{await api("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({usuario:$("#loginUsuario").value,password:$("#loginPassword").value})});$("#loginError").textContent="";$("#loginModal").classList.remove("show");$("#adminModal").classList.add("show");cargarAdmin()}catch(e){$("#loginError").textContent=e.message}};
+$("#logoutBtn").onclick=async()=>{await api("/api/admin/logout",{method:"POST"});$("#adminModal").classList.remove("show");$("#loginPassword").value="";alert("Sesión cerrada.")};
+$("#filtrarBtn").onclick=()=>cargarAdmin();
+
+async function cargarAdmin(){try{
+ const q=new URLSearchParams();if($("#filtroQ").value)q.set("q",$("#filtroQ").value);if($("#filtroEstado").value)q.set("estado",$("#filtroEstado").value);if($("#filtroPrioridad").value)q.set("prioridad",$("#filtroPrioridad").value);
+ const [rows,s]=await Promise.all([api("/api/admin/reportes?"+q),api("/api/admin/estadisticas")]);
+ $("#stats").innerHTML=[["Total",s.total],["Pendientes",s.pendientes],["En proceso",s.proceso],["Atendidos",s.atendidos]].map(x=>`<div class="stat"><strong>${x[1]}</strong>${x[0]}</div>`).join("");
+ $("#tablaReportes").innerHTML=rows.length?`<table class="report-table"><thead><tr><th>Código</th><th>Tipo</th><th>Estado</th><th>Prioridad</th></tr></thead><tbody>${rows.map(r=>`<tr><td><button class="codebtn" onclick="seleccionar('${r.codigo}')">${r.codigo}</button></td><td>${r.tipo}</td><td>${r.estado_actual}</td><td>${r.prioridad}</td></tr>`).join("")}</tbody></table>`:"<p>No hay reportes con esos filtros.</p>";
+}catch(e){if(e.status===401){$("#adminModal").classList.remove("show");$("#loginModal").classList.add("show")}else alert(e.message)}}
+
+window.seleccionar=async c=>{try{const d=await api("/api/admin/reportes/"+encodeURIComponent(c));$("#adminCodigo").value=d.codigo;$("#adminEstado").value=d.estado_actual;$("#adminPrioridad").value=d.prioridad;$("#adminResponsable").value=d.responsable||"";$("#detalleAdmin").innerHTML=`<div class="detail-card"><b>${d.codigo}</b><p>${d.nombre} · ${d.email}</p><p><b>Ubicación:</b> ${d.ubicacion}</p><p><b>Tipo:</b> ${d.tipo}</p>${d.descripcion?`<p><b>Descripción:</b> ${d.descripcion}</p>`:""}${d.foto?`<img class="evidence" src="${d.foto}" alt="Evidencia del reporte">`:"<p>Sin fotografía.</p>"}</div>`}catch(e){alert(e.message)}};
+$("#guardarGestion").onclick=async()=>{const c=$("#adminCodigo").value;if(!c)return alert("Selecciona un ticket.");try{await api("/api/admin/reportes/"+encodeURIComponent(c),{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({estado:$("#adminEstado").value,prioridad:$("#adminPrioridad").value,responsable:$("#adminResponsable").value,observacion:$("#adminObservacion").value})});$("#adminObservacion").value="";await cargarAdmin();await seleccionar(c);alert("Reporte actualizado.")}catch(e){alert(e.message)}};
