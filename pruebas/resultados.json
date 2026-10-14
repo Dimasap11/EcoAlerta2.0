@@ -1,12 +1,12 @@
 {
-  "fecha": "2026-10-14T20:56:06.276Z",
+  "fecha": "2026-10-14T20:58:44.371Z",
   "resultados": [
     {
       "id": "CP-01",
       "req": "RF-02, RF-03, RF-05",
       "descripcion": "Registrar un reporte válido con fotografía",
       "esperado": "HTTP 200 y código con formato EA-##########",
-      "obtenido": "HTTP 200, código EA-1136611875",
+      "obtenido": "HTTP 200, código EA-1152419426",
       "resultado": "Aprobado"
     },
     {

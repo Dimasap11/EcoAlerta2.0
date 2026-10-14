@@ -73,11 +73,13 @@ app.post("/api/reportes", upload.single("foto"), (req, res) => {
     if (!dentroDeRD(lat, lng)) return res.status(400).json({ error: "Marca en el mapa un punto dentro de República Dominicana." });
     let codigo = codigoNuevo(); while (db.prepare("SELECT 1 FROM reportes WHERE codigo=?").get(codigo)) codigo = codigoNuevo();
     const fecha = new Date().toISOString(), foto = req.file ? "/uploads/" + req.file.filename : null;
-    const info = db.prepare(`INSERT INTO reportes(codigo,nombre,email,telefono,ubicacion,lat,lng,tipo,descripcion,foto,fecha_creacion)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(codigo, nombre.trim(), email.trim(), telefono || null, ubicacion,
-      +lat.toFixed(6), +lng.toFixed(6), tipo, descripcion || null, foto, fecha);
-    db.prepare("INSERT INTO historial(reporte_id,estado,observacion,fecha) VALUES(?,?,?,?)")
-      .run(info.lastInsertRowid, "Reporte recibido", "Reporte registrado en EcoAlerta.", fecha);
+    db.transaction(() => {
+      const info = db.prepare(`INSERT INTO reportes(codigo,nombre,email,telefono,ubicacion,lat,lng,tipo,descripcion,foto,fecha_creacion)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(codigo, nombre.trim(), email.trim(), telefono || null, ubicacion,
+        +lat.toFixed(6), +lng.toFixed(6), tipo, descripcion || null, foto, fecha);
+      db.prepare("INSERT INTO historial(reporte_id,estado,observacion,fecha) VALUES(?,?,?,?)")
+        .run(info.lastInsertRowid, "Reporte recibido", "Reporte registrado en EcoAlerta.", fecha);
+    })();
     res.json({ codigo });
   } catch (e) { console.error(e); res.status(500).json({ error: "No se pudo registrar el reporte." }); }
 });
@@ -135,8 +137,11 @@ app.put("/api/admin/reportes/:codigo", requireAdmin, (req, res) => {
   const estado = req.body.estado || r.estado_actual, prioridad = req.body.prioridad || r.prioridad;
   if (!ESTADOS.includes(estado) || !PRIORIDADES.includes(prioridad)) return res.status(400).json({ error: "Estado o prioridad no válidos." });
   const responsable = req.body.responsable ?? r.responsable, observacion = (req.body.observacion || "").trim(), fecha = new Date().toISOString();
-  db.prepare("UPDATE reportes SET estado_actual=?,prioridad=?,responsable=? WHERE id=?").run(estado, prioridad, responsable, r.id);
-  if (estado !== r.estado_actual || observacion) db.prepare("INSERT INTO historial(reporte_id,estado,observacion,fecha) VALUES(?,?,?,?)").run(r.id, estado, observacion, fecha);
+  // Actualización y registro en el historial dentro de una transacción: se guardan ambos o ninguno.
+  db.transaction(() => {
+    db.prepare("UPDATE reportes SET estado_actual=?,prioridad=?,responsable=? WHERE id=?").run(estado, prioridad, responsable, r.id);
+    if (estado !== r.estado_actual || observacion) db.prepare("INSERT INTO historial(reporte_id,estado,observacion,fecha) VALUES(?,?,?,?)").run(r.id, estado, observacion, fecha);
+  })();
   res.json({ ok: true });
 });
 app.get("/api/admin/estadisticas", requireAdmin, (_, res) => {
