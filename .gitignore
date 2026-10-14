@@ -3,3 +3,4 @@ node_modules/
 ecoalerta.db 
 .vs/ 
 .vscode/ 
+public/uploads/

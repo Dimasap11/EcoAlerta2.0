@@ -22,5 +22,17 @@ Versión evolutiva del prototipo original de EcoAlerta.
 
 La base `ecoalerta.db` se crea automáticamente al iniciar.
 
+## Datos de demostración
+Para cargar 13 reportes de ejemplo en distintos estados (útil para presentaciones):
+
+```
+npm run demo
+```
+
+**Atención:** este comando borra todos los reportes existentes antes de insertar los de ejemplo.
+
+## Acceso administrativo
+Las credenciales se configuran con las variables de entorno `ECO_ADMIN_USER` y `ECO_ADMIN_PASS`. Si no se definen, se usan los valores de desarrollo indicados en `server.js`.
+
 ## Nota académica
 Esta versión sustituye el almacenamiento local del prototipo por una arquitectura cliente-servidor con base de datos. Es una primera implementación de EcoAlerta 2.0 y sirve como base para autenticación, correo real, roles y despliegue.

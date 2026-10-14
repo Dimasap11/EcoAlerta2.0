@@ -2,69 +2,157 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EcoAlerta 2.0</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<title>EcoAlerta 2.0 · Gestión de incidencias ambientales</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="hero">
-  <div><h1>Eco<span>Alerta</span></h1><p>Gestión y seguimiento de incidencias ambientales</p></div>
-  <nav><a href="#reportar">Reportar</a><a href="#mapa">Mapa</a><button id="btnSeguimiento">Seguimiento</button><button id="btnAdmin" class="dark">Administración</button></nav>
+<header class="topbar">
+  <a class="brand" href="#inicio" aria-label="EcoAlerta inicio">
+    <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15-.4 0-.7-.4-1-1z" fill="currentColor"/><path d="M5 19 13 11" stroke="#173b2a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+    <span>Eco<b>Alerta</b></span>
+  </a>
+  <nav>
+    <a href="#reportar">Reportar</a>
+    <a href="#mapa">Mapa</a>
+    <button id="btnSeguimiento" class="nav-btn">Seguimiento</button>
+    <button id="btnAdmin" class="nav-btn solid">Administración</button>
+  </nav>
 </header>
 
-<main>
-<section class="intro">
-  <div><span class="tag">EcoAlerta 2.0</span><h2>Tu reporte puede convertirse en una acción.</h2><p>Registra una incidencia, conserva tu código de seguimiento y consulta el avance hasta su atención.</p></div>
-  <div class="flow"><b>📸 Reporta</b><b>🎫 Genera ticket</b><b>📍 Ubica</b><b>🔄 Da seguimiento</b></div>
+<main id="inicio">
+<section class="hero">
+  <div class="hero-text">
+    <span class="eyebrow">EcoAlerta 2.0 · Participación ciudadana</span>
+    <h1>Tu reporte puede convertirse en una acción.</h1>
+    <p>Registra una incidencia ambiental, conserva tu código de seguimiento y consulta el avance del caso hasta su atención.</p>
+    <div class="hero-cta">
+      <a class="btn primary lg" href="#reportar">Reportar una incidencia</a>
+      <button class="btn ghost lg" id="ctaSeguimiento">Consultar mi ticket</button>
+    </div>
+    <div class="hero-stats">
+      <div><strong id="resTotal">—</strong><span>reportes registrados</span></div>
+      <div><strong id="resAtendidos">—</strong><span>casos atendidos</span></div>
+      <div><strong id="resTasa">—</strong><span>tasa de atención</span></div>
+    </div>
+  </div>
+  <ol class="steps">
+    <li><span>1</span><div><b>Reporta</b><p>Describe la incidencia y adjunta una foto como evidencia.</p></div></li>
+    <li><span>2</span><div><b>Recibe tu ticket</b><p>El sistema genera un código único para tu caso.</p></div></li>
+    <li><span>3</span><div><b>Se gestiona</b><p>El equipo evalúa, prioriza y asigna una brigada.</p></div></li>
+    <li><span>4</span><div><b>Da seguimiento</b><p>Consulta cada cambio de estado con tu código.</p></div></li>
+  </ol>
 </section>
 
 <section id="reportar" class="card">
-<h2>Reportar una incidencia</h2><p class="muted">Completa la información para registrar el caso.</p>
-<form id="reporteForm">
-<div class="grid">
-<label>Nombre completo<input name="nombre" required></label>
-<label>Correo electrónico<input type="email" name="email" required></label>
-<label>Teléfono (opcional)<input type="tel" name="telefono"></label>
-<label>Tipo de reporte<select name="tipo" required><option value="">Selecciona</option><option>Residuos Plásticos</option><option>Residuos Orgánicos</option><option>Residuos Metálicos</option><option>Contaminación Sónica</option><option>Residuos Pluviales</option><option>Acumulación de basura</option></select></label>
-<label class="wide">Ubicación<select name="ubicacion" id="ubicacion" required><option value="">Selecciona</option><option>Parque Duarte, Moca, República Dominicana</option><option>Calle 27 de Febrero, Moca, República Dominicana</option><option>Calle Independencia, Moca, República Dominicana</option><option>Hospital Municipal de Fantino, República Dominicana</option><option>Calle Restauración, Fantino, República Dominicana</option><option>Parque Central, Santiago, República Dominicana</option></select></label>
-<label class="wide">Descripción<textarea name="descripcion" rows="3" placeholder="Describe brevemente la situación"></textarea></label>
-<label class="wide">Evidencia fotográfica<input type="file" name="foto" accept="image/*"></label>
-</div><button class="primary" type="submit">Enviar reporte</button>
-</form>
+  <div class="card-head"><div><h2>Reportar una incidencia</h2><p class="muted">Los campos marcados con * son obligatorios.</p></div></div>
+  <form id="reporteForm" novalidate>
+    <fieldset>
+      <legend>Datos de contacto</legend>
+      <div class="grid">
+        <label>Nombre completo *<input name="nombre" required autocomplete="name" placeholder="Ej. María Pérez"></label>
+        <label>Correo electrónico *<input type="email" name="email" required autocomplete="email" placeholder="nombre@correo.com"></label>
+        <label>Teléfono<input type="tel" name="telefono" autocomplete="tel" placeholder="809-000-0000"></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Detalle de la incidencia</legend>
+      <div class="grid">
+        <label>Tipo de reporte *<select name="tipo" required><option value="">Selecciona el tipo</option><option>Residuos Plásticos</option><option>Residuos Orgánicos</option><option>Residuos Metálicos</option><option>Contaminación Sónica</option><option>Residuos Pluviales</option><option>Acumulación de basura</option></select></label>
+        <label>Ubicación *<select name="ubicacion" required><option value="">Selecciona la ubicación</option><option>Parque Duarte, Moca, República Dominicana</option><option>Calle 27 de Febrero, Moca, República Dominicana</option><option>Calle Independencia, Moca, República Dominicana</option><option>Hospital Municipal de Fantino, República Dominicana</option><option>Calle Restauración, Fantino, República Dominicana</option><option>Parque Central, Santiago, República Dominicana</option></select></label>
+        <label class="wide">Descripción<textarea name="descripcion" rows="3" placeholder="¿Qué está pasando? ¿Desde cuándo?"></textarea></label>
+        <div class="wide">
+          <span class="field-label">Evidencia fotográfica</span>
+          <label class="file-drop" for="foto">
+            <input type="file" id="foto" name="foto" accept="image/*">
+            <span class="file-icon" aria-hidden="true">📷</span>
+            <span class="file-text"><b id="fotoNombre">Seleccionar una foto</b><small>JPG o PNG, máximo 5 MB</small></span>
+            <img id="fotoPreview" alt="" hidden>
+          </label>
+        </div>
+      </div>
+    </fieldset>
+    <div class="form-actions"><button class="btn primary lg" type="submit" id="enviarBtn">Enviar reporte</button></div>
+  </form>
 </section>
 
-<section id="mapa" class="card"><h2>Mapa de reportes</h2><div id="map"></div></section>
+<section id="mapa" class="card">
+  <div class="card-head">
+    <div><h2>Mapa de reportes</h2><p class="muted">Incidencias registradas por ubicación y estado.</p></div>
+    <div class="legend">
+      <span><i style="--c:var(--st-recibido)"></i>Recibido</span>
+      <span><i style="--c:var(--st-proceso)"></i>En proceso</span>
+      <span><i style="--c:var(--st-atendido)"></i>Atendido</span>
+    </div>
+  </div>
+  <div id="map"><div class="map-fallback">Cargando mapa…</div></div>
+</section>
 </main>
 
-<div class="modal" id="ticketModal"><div class="modalbox"><button class="x">×</button><h2>✅ Reporte registrado</h2><p>Guarda este código para consultar el estado:</p><div class="ticket" id="codigoGenerado"></div></div></div>
+<footer class="footer"><span>EcoAlerta 2.0</span><span>Gestión y seguimiento de incidencias ambientales · Proyecto académico</span></footer>
 
-<div class="modal" id="seguimientoModal"><div class="modalbox large"><button class="x">×</button><h2>Seguimiento de reporte</h2><div class="search"><input id="codigoBusqueda" placeholder="EA-XXXXXXXXXX"><button id="buscarTicket">Buscar</button></div><div id="detalleTicket"></div></div></div>
-
-<div class="modal" id="loginModal"><div class="modalbox loginbox"><button class="x">×</button>
-<h2>Acceso administrativo</h2><p class="muted">Área reservada para personal autorizado.</p>
-<label>Usuario<input id="loginUsuario" autocomplete="username"></label>
-<label>Contraseña<input id="loginPassword" type="password" autocomplete="current-password"></label>
-<p id="loginError" class="error"></p><button id="loginBtn" class="primary">Iniciar sesión</button>
-<p class="demo-note"><b>Acceso inicial de desarrollo:</b> admin / EcoAlerta2026!</p>
+<div class="modal" id="ticketModal" role="dialog" aria-modal="true"><div class="modalbox center"><button class="x" aria-label="Cerrar">×</button>
+  <div class="success-icon" aria-hidden="true">✓</div>
+  <h2>Reporte registrado</h2><p class="muted">Guarda este código para consultar el estado de tu caso.</p>
+  <div class="ticket" id="codigoGenerado"></div>
+  <div class="row-actions"><button class="btn ghost" id="copiarCodigo">Copiar código</button><button class="btn primary" id="verSeguimiento">Ver seguimiento</button></div>
 </div></div>
 
-<div class="modal" id="adminModal"><div class="modalbox admin"><button class="x">×</button>
-<div class="admin-title"><div><h2>Centro de Gestión EcoAlerta</h2><p class="muted">Administración y seguimiento de incidencias</p></div><button id="logoutBtn" class="secondary">Cerrar sesión</button></div>
-<div id="stats" class="stats"></div>
-<div class="filters"><input id="filtroQ" placeholder="Buscar código, ubicación o responsable">
-<select id="filtroEstado"><option value="">Todos los estados</option><option>Reporte recibido</option><option>Reporte en evaluación</option><option>Asignado</option><option>Reporte en ejecución</option><option>Reporte atendido</option><option>Cerrado</option></select>
-<select id="filtroPrioridad"><option value="">Todas las prioridades</option><option>Baja</option><option>Media</option><option>Alta</option><option>Crítica</option></select>
-<button id="filtrarBtn" class="secondary">Filtrar</button></div>
-<div class="admin-grid"><div><h3>Reportes registrados</h3><div id="tablaReportes"></div></div>
-<div class="editor"><h3>Detalle y gestión</h3><div id="detalleAdmin" class="detail-empty">Selecciona un ticket de la lista.</div>
-<input id="adminCodigo" type="hidden">
-<label>Estado<select id="adminEstado"><option>Reporte recibido</option><option>Reporte en evaluación</option><option>Asignado</option><option>Reporte en ejecución</option><option>Reporte atendido</option><option>Cerrado</option></select></label>
-<label>Prioridad<select id="adminPrioridad"><option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option></select></label>
-<label>Responsable<input id="adminResponsable" placeholder="Responsable / brigada"></label>
-<label>Observación<textarea id="adminObservacion" rows="3" placeholder="Observación de la gestión"></textarea></label>
-<button id="guardarGestion" class="primary">Guardar actualización</button></div></div>
+<div class="modal" id="seguimientoModal" role="dialog" aria-modal="true"><div class="modalbox large"><button class="x" aria-label="Cerrar">×</button>
+  <h2>Seguimiento de reporte</h2><p class="muted">Introduce el código que recibiste al registrar tu reporte.</p>
+  <form class="search" id="buscarForm"><input id="codigoBusqueda" placeholder="EA-XXXXXXXXXX" autocomplete="off"><button class="btn dark" type="submit">Buscar</button></form>
+  <div id="detalleTicket"></div>
 </div></div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<div class="modal" id="loginModal" role="dialog" aria-modal="true"><div class="modalbox loginbox"><button class="x" aria-label="Cerrar">×</button>
+  <span class="brand-mark big" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15-.4 0-.7-.4-1-1z" fill="currentColor"/><path d="M5 19 13 11" stroke="#173b2a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+  <h2>Acceso administrativo</h2><p class="muted">Área reservada para personal autorizado.</p>
+  <form id="loginForm">
+    <label>Usuario<input id="loginUsuario" autocomplete="username" required></label>
+    <label>Contraseña<input id="loginPassword" type="password" autocomplete="current-password" required></label>
+    <p id="loginError" class="error" role="alert"></p>
+    <button class="btn primary lg block" type="submit">Iniciar sesión</button>
+  </form>
+</div></div>
+
+<div class="modal full" id="adminModal" role="dialog" aria-modal="true"><div class="admin">
+  <header class="admin-bar">
+    <div class="admin-brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 15-14-1 10-6 15-14 15-.4 0-.7-.4-1-1z" fill="currentColor"/><path d="M5 19 13 11" stroke="#173b2a" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+      <div><b>Centro de Gestión EcoAlerta</b><small>Administración y seguimiento de incidencias</small></div></div>
+    <div class="admin-actions"><span class="user-chip" id="adminUsuario"></span><button id="logoutBtn" class="btn ghost-light">Cerrar sesión</button><button class="btn ghost-light" id="cerrarAdmin">Volver al portal</button></div>
+  </header>
+  <div class="admin-body">
+    <div id="stats" class="stats"></div>
+    <div class="filters">
+      <input id="filtroQ" placeholder="Buscar por código, ciudadano, ubicación o responsable">
+      <select id="filtroEstado"><option value="">Todos los estados</option><option>Reporte recibido</option><option>Reporte en evaluación</option><option>Asignado</option><option>Reporte en ejecución</option><option>Reporte atendido</option><option>Cerrado</option></select>
+      <select id="filtroPrioridad"><option value="">Todas las prioridades</option><option>Baja</option><option>Media</option><option>Alta</option><option>Crítica</option></select>
+      <button id="limpiarFiltros" class="btn ghost">Limpiar</button>
+    </div>
+    <div class="admin-grid">
+      <section class="panel"><div class="panel-head"><h3>Reportes registrados</h3><span class="muted" id="conteo"></span></div><div id="tablaReportes" class="table-wrap"></div></section>
+      <section class="panel editor">
+        <div class="panel-head"><h3>Detalle y gestión</h3></div>
+        <div id="detalleAdmin" class="detail-empty">Selecciona un reporte de la lista para ver su detalle y actualizarlo.</div>
+        <form id="gestionForm" hidden>
+          <input id="adminCodigo" type="hidden">
+          <div class="grid two">
+            <label>Estado<select id="adminEstado"><option>Reporte recibido</option><option>Reporte en evaluación</option><option>Asignado</option><option>Reporte en ejecución</option><option>Reporte atendido</option><option>Cerrado</option></select></label>
+            <label>Prioridad<select id="adminPrioridad"><option>Baja</option><option>Media</option><option>Alta</option><option>Crítica</option></select></label>
+          </div>
+          <label>Responsable<input id="adminResponsable" placeholder="Responsable o brigada asignada"></label>
+          <label>Observación<textarea id="adminObservacion" rows="3" placeholder="Describe la acción realizada"></textarea></label>
+          <button class="btn primary lg block" type="submit" id="guardarGestion">Guardar actualización</button>
+        </form>
+      </section>
+    </div>
+  </div>
+</div></div>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="/vendor/leaflet/leaflet.js"></script>
 <script src="app.js"></script>
 </body></html>
