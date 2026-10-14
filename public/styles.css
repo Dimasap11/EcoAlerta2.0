@@ -211,6 +211,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);b
 .nowrap{white-space:nowrap}
 .editor{position:sticky;top:0;max-height:calc(100vh - 120px);overflow:auto}
 .editor form{display:flex;flex-direction:column;gap:12px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+[hidden]{display:none!important}
 .detail .ticket-head{margin-top:0}
 .detail .facts{margin-top:14px}
 .detail-empty{padding:28px 18px;text-align:center;color:var(--muted);background:var(--bg);border-radius:12px}
