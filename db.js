@@ -1,7 +1,8 @@
 const Database = require("better-sqlite3");
 const path = require("path");
 
-const db = new Database(path.join(__dirname, "ecoalerta.db"));
+// ECO_DB permite usar otra base de datos (por ejemplo, en las pruebas automatizadas).
+const db = new Database(process.env.ECO_DB || path.join(__dirname, "ecoalerta.db"));
 db.pragma("foreign_keys = ON");
 db.exec(`
 CREATE TABLE IF NOT EXISTS reportes (

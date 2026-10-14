@@ -16,8 +16,8 @@ function grupoEstado(e) {
 }
 // "Calle X, Moca, República Dominicana" -> Calle X / Moca
 function lugar(u) {
-  const p = String(u).split(",").map(x => x.trim());
-  return esc(p[0]) + (p.length > 1 ? `<small>${esc(p[1])}</small>` : "");
+  const p = String(u).split(",").map(x => x.trim()).filter(x => x && !/^rep[uú]blica dominicana$/i.test(x));
+  return esc(p[0] || u) + (p.length > 1 ? `<small>${esc(p[p.length - 1])}</small>` : "");
 }
 // Límites aproximados de República Dominicana (deben coincidir con db.js).
 const RD = { latMin: 17.36, latMax: 19.95, lngMin: -72.01, lngMax: -68.32 };

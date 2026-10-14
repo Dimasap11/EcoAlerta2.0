@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "demo": "node demo.js",
-    "respaldo": "node respaldo.js"
+    "respaldo": "node respaldo.js",
+    "test": "node pruebas/pruebas-api.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

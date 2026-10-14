@@ -1,0 +1,173 @@
+{
+  "fecha": "2026-10-14T20:51:04.859Z",
+  "resultados": [
+    {
+      "id": "CP-01",
+      "req": "RF-02, RF-03, RF-05",
+      "descripcion": "Registrar un reporte válido con fotografía",
+      "esperado": "HTTP 200 y código con formato EA-##########",
+      "obtenido": "HTTP 200, código EA-1106470835",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-02",
+      "req": "RF-02",
+      "descripcion": "Registrar sin nombre ni correo",
+      "esperado": "HTTP 400 con mensaje de campos obligatorios",
+      "obtenido": "HTTP 400: Faltan campos obligatorios.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-03",
+      "req": "RF-05",
+      "descripcion": "Registrar con un tipo de residuo inexistente",
+      "esperado": "HTTP 400, tipo no válido",
+      "obtenido": "HTTP 400: Tipo de reporte no válido.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-04",
+      "req": "RF-04",
+      "descripcion": "Registrar con coordenadas fuera de República Dominicana",
+      "esperado": "HTTP 400, punto fuera del país",
+      "obtenido": "HTTP 400: Marca en el mapa un punto dentro de República Dominicana.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-05",
+      "req": "RF-04",
+      "descripcion": "Registrar sin coordenadas",
+      "esperado": "HTTP 400, se exige ubicación en el mapa",
+      "obtenido": "HTTP 400: Marca en el mapa un punto dentro de República Dominicana.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-06",
+      "req": "RF-03",
+      "descripcion": "Adjuntar un archivo que no es imagen",
+      "esperado": "HTTP 400, la evidencia debe ser imagen",
+      "obtenido": "HTTP 400: La evidencia debe ser una imagen.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-07",
+      "req": "RF-03",
+      "descripcion": "Adjuntar una imagen mayor de 5 MB",
+      "esperado": "HTTP 400, límite de 5 MB",
+      "obtenido": "HTTP 400: La foto no puede pesar más de 5 MB.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-08",
+      "req": "RF-09",
+      "descripcion": "Consultar el reporte por su código (vista pública)",
+      "esperado": "HTTP 200, estado e historial; sin nombre ni correo",
+      "obtenido": "HTTP 200, estado \"Reporte recibido\", 1 evento(s), datos personales expuestos: no",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-09",
+      "req": "RF-09",
+      "descripcion": "Consultar un código inexistente",
+      "esperado": "HTTP 404 con mensaje claro",
+      "obtenido": "HTTP 404: No encontramos un reporte con ese código.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-10",
+      "req": "RF-09",
+      "descripcion": "Consultar el código escrito en minúsculas",
+      "esperado": "HTTP 200 (no distingue mayúsculas)",
+      "obtenido": "HTTP 200",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-11",
+      "req": "RF-07",
+      "descripcion": "El mapa público incluye el reporte con sus coordenadas",
+      "esperado": "El código aparece con lat 19.3936 y lng -70.5256",
+      "obtenido": "Encontrado en (19.3936, -70.5256)",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-12",
+      "req": "RF-17, RNF-04",
+      "descripcion": "Acceder al panel sin iniciar sesión",
+      "esperado": "HTTP 401",
+      "obtenido": "HTTP 401: Sesión administrativa requerida.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-13",
+      "req": "RNF-04",
+      "descripcion": "Iniciar sesión con contraseña incorrecta",
+      "esperado": "HTTP 401",
+      "obtenido": "HTTP 401: Usuario o contraseña incorrectos.",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-14",
+      "req": "RF-17",
+      "descripcion": "Iniciar sesión con credenciales correctas",
+      "esperado": "HTTP 200 y sesión activa",
+      "obtenido": "HTTP 200, sesión activa: true",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-15",
+      "req": "RF-10, RF-17",
+      "descripcion": "Listar reportes en el panel y ver el detalle completo",
+      "esperado": "El reporte aparece con nombre, correo y fotografía",
+      "obtenido": "En lista: sí, correo: prueba@correo.com, foto: sí",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-16",
+      "req": "RF-11",
+      "descripcion": "Cambiar estado, prioridad y responsable con observación",
+      "esperado": "HTTP 200 y nuevo evento en el historial",
+      "obtenido": "HTTP 200, estado \"Asignado\", prioridad \"Alta\", 2 eventos",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-17",
+      "req": "RF-11, RNF-06",
+      "descripcion": "Enviar un estado que no existe",
+      "esperado": "HTTP 400; el reporte no cambia",
+      "obtenido": "HTTP 400, estado sigue \"Asignado\"",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-18",
+      "req": "RF-09",
+      "descripcion": "El ciudadano ve el cambio en su seguimiento",
+      "esperado": "Estado \"Asignado\" y 2 eventos en el historial",
+      "obtenido": "Estado \"Asignado\", 2 eventos",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-19",
+      "req": "RF-10",
+      "descripcion": "Filtrar el panel por estado y prioridad",
+      "esperado": "Solo devuelve reportes que cumplen ambos filtros",
+      "obtenido": "Asignado+Alta: 1, Cerrado: 0",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-20",
+      "req": "RF-16",
+      "descripcion": "Indicadores del panel",
+      "esperado": "Total 1, en proceso 1, prioridad alta sin cerrar 1",
+      "obtenido": "Total 1, en proceso 1, críticos 1",
+      "resultado": "Aprobado"
+    },
+    {
+      "id": "CP-21",
+      "req": "RNF-04",
+      "descripcion": "Cerrar sesión impide volver al panel",
+      "esperado": "HTTP 401 después del cierre",
+      "obtenido": "HTTP 401",
+      "resultado": "Aprobado"
+    }
+  ]
+}
