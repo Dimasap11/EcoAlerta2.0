@@ -17,8 +17,13 @@ function grupoEstado(e) {
 // "Calle X, Moca, República Dominicana" -> Calle X / Moca
 function lugar(u) {
   const p = String(u).split(",").map(x => x.trim());
-  return esc(p[0]) + (p.length > 2 ? `<small>${esc(p[1])}</small>` : "");
+  return esc(p[0]) + (p.length > 1 ? `<small>${esc(p[1])}</small>` : "");
 }
+// Límites aproximados de República Dominicana (deben coincidir con db.js).
+const RD = { latMin: 17.36, latMax: 19.95, lngMin: -72.01, lngMax: -68.32 };
+const dentroDeRD = (lat, lng) => lat >= RD.latMin && lat <= RD.latMax && lng >= RD.lngMin && lng <= RD.lngMax;
+const enlaceMapa = (lat, lng) => lat == null ? "" :
+  `<a class="map-link" href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}" target="_blank" rel="noopener">Ver en el mapa ↗</a>`;
 const badgeEstado = e => `<span class="badge st-${grupoEstado(e)}">${esc(e)}</span>`;
 const badgePrioridad = p => `<span class="badge pr-${esc(String(p).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""))}">${esc(p)}</span>`;
 
@@ -79,11 +84,14 @@ async function cargarMapa(ajustar = false) {
         .bindPopup(`<div class="pop"><b>${esc(p.codigo)}</b><span>${esc(p.tipo)}</span><small>${esc(p.ubicacion.split(",").slice(0, 2).join(","))}</small>${badgeEstado(p.estado)}</div>`)
         .addTo(capaPuntos);
     });
-    // Vista inicial centrada en Moca, donde se concentra la mayoría de reportes.
-    if (ajustar) {
-      const moca = puntos.filter(p => p.ubicacion.includes("Moca"));
-      const base = moca.length ? moca : puntos;
-      if (base.length) map.fitBounds(L.latLngBounds(base.map(p => [p.lat, p.lng])), { padding: [50, 50], maxZoom: 16 });
+    // Vista inicial sobre la zona con más reportes, para que los puntos no queden encimados.
+    if (ajustar && puntos.length) {
+      const cerca = (a, b) => Math.abs(a.lat - b.lat) < .05 && Math.abs(a.lng - b.lng) < .05;
+      const centro = puntos.reduce((m, p) => {
+        const n = puntos.filter(q => cerca(p, q)).length; return n > m.n ? { p, n } : m;
+      }, { p: puntos[0], n: 0 }).p;
+      const zona = puntos.filter(q => cerca(centro, q));
+      map.fitBounds(L.latLngBounds(zona.map(p => [p.lat, p.lng])), { padding: [50, 50], maxZoom: 16 });
     }
   } catch (e) { console.error(e); }
 }
@@ -96,6 +104,54 @@ async function cargarResumen() {
     $("#resTasa").textContent = r.total ? Math.round(r.atendidos / r.total * 100) + "%" : "—";
   } catch { /* indicadores opcionales */ }
 }
+
+/* ---------- selector de ubicación ---------- */
+let picker = null, pin = null;
+const pinIcon = () => L.divIcon({ className: "", html: '<div class="pin"></div>', iconSize: [28, 38], iconAnchor: [14, 36] });
+
+function marcarUbicacion(lat, lng, origen) {
+  if (!dentroDeRD(lat, lng)) { toast("El punto debe estar dentro de República Dominicana.", "error"); return; }
+  $("#lat").value = lat.toFixed(6); $("#lng").value = lng.toFixed(6);
+  $("#pickerMap").classList.remove("invalid");
+  if (picker) {
+    if (pin) pin.setLatLng([lat, lng]);
+    else {
+      pin = L.marker([lat, lng], { icon: pinIcon(), draggable: true }).addTo(picker);
+      pin.on("dragend", () => { const p = pin.getLatLng(); marcarUbicacion(p.lat, p.lng, "arrastre"); });
+    }
+    if (origen === "gps") picker.setView([lat, lng], 17);
+  }
+  $("#pickerStatus").innerHTML = `<b>Ubicación marcada</b> · ${lat.toFixed(5)}, ${lng.toFixed(5)} <span class="muted">(puedes arrastrar el pin para ajustarla)</span>`;
+  $("#pickerStatus").classList.add("ok");
+}
+function limpiarUbicacion() {
+  $("#lat").value = ""; $("#lng").value = "";
+  if (pin) { pin.remove(); pin = null; }
+  $("#pickerStatus").textContent = "Toca el mapa para marcar el lugar exacto de la incidencia.";
+  $("#pickerStatus").classList.remove("ok");
+}
+function iniciarSelector() {
+  const cont = $("#pickerMap");
+  if (typeof L === "undefined") { cont.innerHTML = '<div class="map-fallback">Mapa no disponible. Usa el botón "Usar mi ubicación".</div>'; return; }
+  try {
+    cont.innerHTML = "";
+    picker = L.map(cont, { scrollWheelZoom: false, maxBounds: [[RD.latMin - .3, RD.lngMin - .3], [RD.latMax + .3, RD.lngMax + .3]], minZoom: 7 })
+      .setView([19.3936, -70.5256], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap", maxZoom: 19 }).addTo(picker);
+    picker.on("click", e => marcarUbicacion(e.latlng.lat, e.latlng.lng, "clic"));
+  } catch (e) { console.error(e); cont.innerHTML = '<div class="map-fallback">Mapa no disponible. Usa el botón "Usar mi ubicación".</div>'; }
+}
+$("#miUbicacion").onclick = () => {
+  if (!navigator.geolocation) return toast("Tu navegador no permite obtener la ubicación.", "error");
+  const btn = $("#miUbicacion"); btn.disabled = true; btn.textContent = "Buscando…";
+  navigator.geolocation.getCurrentPosition(
+    p => { btn.disabled = false; btn.textContent = "📍 Usar mi ubicación"; marcarUbicacion(p.coords.latitude, p.coords.longitude, "gps"); },
+    err => {
+      btn.disabled = false; btn.textContent = "📍 Usar mi ubicación";
+      toast(err.code === 1 ? "Permiso de ubicación denegado. Marca el punto en el mapa." : "No se pudo obtener tu ubicación. Marca el punto en el mapa.", "error");
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+};
 
 /* ---------- formulario ciudadano ---------- */
 const fotoInput = $("#foto");
@@ -112,17 +168,19 @@ $("#reporteForm").addEventListener("submit", async e => {
   const form = e.target;
   form.querySelectorAll(".invalid").forEach(x => x.classList.remove("invalid"));
   const faltan = [...form.querySelectorAll("[required]")].filter(x => !x.value.trim() || (x.type === "email" && !x.checkValidity()));
-  if (faltan.length) {
+  const sinPunto = !$("#lat").value;
+  if (sinPunto) $("#pickerMap").classList.add("invalid");
+  if (faltan.length || sinPunto) {
     faltan.forEach(x => x.classList.add("invalid"));
-    faltan[0].focus();
-    return toast("Revisa los campos marcados en rojo.", "error");
+    (faltan[0] || $("#pickerMap")).focus();
+    return toast(faltan.length ? "Revisa los campos marcados en rojo." : "Marca en el mapa dónde está la incidencia.", "error");
   }
   const btn = $("#enviarBtn"); btn.disabled = true; btn.textContent = "Enviando…";
   try {
     const d = await api("/api/reportes", { method: "POST", body: new FormData(form) });
     $("#codigoGenerado").textContent = d.codigo;
     try { localStorage.setItem("ecoUltimoCodigo", d.codigo); } catch {}
-    form.reset(); fotoInput.dispatchEvent(new Event("change"));
+    form.reset(); fotoInput.dispatchEvent(new Event("change")); limpiarUbicacion();
     abrir("#ticketModal");
     cargarMapa(); cargarResumen();
   } catch (err) { toast(err.message, "error"); }
@@ -169,7 +227,7 @@ async function cargarTicket(c) {
       <dl class="facts">
         <div><dt>Tipo</dt><dd>${esc(d.tipo)}</dd></div>
         <div><dt>Prioridad</dt><dd>${badgePrioridad(d.prioridad)}</dd></div>
-        <div class="wide"><dt>Ubicación</dt><dd>${esc(d.ubicacion)}</dd></div>
+        <div class="wide"><dt>Ubicación</dt><dd>${esc(d.ubicacion)} ${enlaceMapa(d.lat, d.lng)}</dd></div>
         <div><dt>Registrado</dt><dd>${fecha(d.fecha_creacion)}</dd></div>
       </dl>
       <h4>Historial del caso</h4>${linea(d.historial)}`;
@@ -254,7 +312,7 @@ async function seleccionar(c) {
         <div><dt>Contacto</dt><dd>${esc(d.email)}${d.telefono ? `<br>${esc(d.telefono)}` : ""}</dd></div>
         <div><dt>Tipo</dt><dd>${esc(d.tipo)}</dd></div>
         <div><dt>Responsable</dt><dd>${esc(d.responsable || "Sin asignar")}</dd></div>
-        <div class="wide"><dt>Ubicación</dt><dd>${esc(d.ubicacion)}</dd></div>
+        <div class="wide"><dt>Ubicación</dt><dd>${esc(d.ubicacion)} ${enlaceMapa(d.lat, d.lng)}</dd></div>
         ${d.descripcion ? `<div class="wide"><dt>Descripción</dt><dd>${esc(d.descripcion)}</dd></div>` : ""}
       </dl>
       ${d.foto ? `<img class="evidence" src="${esc(d.foto)}" alt="Evidencia del reporte">` : `<div class="no-photo">Sin evidencia fotográfica</div>`}
@@ -278,4 +336,5 @@ $("#gestionForm").addEventListener("submit", async e => {
 
 /* ---------- inicio ---------- */
 iniciarMapa();
+iniciarSelector();
 cargarResumen();

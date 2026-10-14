@@ -5,6 +5,8 @@ CREATE TABLE reportes (
  email TEXT NOT NULL,
  telefono TEXT,
  ubicacion TEXT NOT NULL,
+ lat REAL,
+ lng REAL,
  tipo TEXT NOT NULL,
  descripcion TEXT,
  foto TEXT,

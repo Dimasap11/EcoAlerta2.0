@@ -3,7 +3,7 @@ const multer = require("multer");
 const session = require("express-session");
 const path = require("path");
 const fs = require("fs");
-const { db, UBICACIONES, TIPOS, ESTADOS, PRIORIDADES } = require("./db");
+const { db, UBICACIONES, TIPOS, ESTADOS, PRIORIDADES, LIMITES_RD, dentroDeRD } = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,7 +50,7 @@ function historialDe(id) {
 }
 
 app.get("/api/catalogos", (_, res) => res.json({
-  ubicaciones: Object.keys(UBICACIONES), tipos: TIPOS, estados: ESTADOS, prioridades: PRIORIDADES
+  tipos: TIPOS, estados: ESTADOS, prioridades: PRIORIDADES, limites: LIMITES_RD
 }));
 
 app.post("/api/admin/login", (req, res) => {
@@ -65,14 +65,17 @@ app.post("/api/admin/logout", (req, res) => req.session.destroy(() => res.json({
 
 app.post("/api/reportes", upload.single("foto"), (req, res) => {
   try {
-    const { nombre, email, telefono, ubicacion, tipo, descripcion } = req.body;
+    const { nombre, email, telefono, tipo, descripcion } = req.body;
+    const ubicacion = (req.body.ubicacion || "").trim().slice(0, 200);
+    const lat = parseFloat(req.body.lat), lng = parseFloat(req.body.lng);
     if (!nombre || !email || !ubicacion || !tipo) return res.status(400).json({ error: "Faltan campos obligatorios." });
-    if (!UBICACIONES[ubicacion]) return res.status(400).json({ error: "Ubicación no válida." });
     if (!TIPOS.includes(tipo)) return res.status(400).json({ error: "Tipo de reporte no válido." });
+    if (!dentroDeRD(lat, lng)) return res.status(400).json({ error: "Marca en el mapa un punto dentro de República Dominicana." });
     let codigo = codigoNuevo(); while (db.prepare("SELECT 1 FROM reportes WHERE codigo=?").get(codigo)) codigo = codigoNuevo();
     const fecha = new Date().toISOString(), foto = req.file ? "/uploads/" + req.file.filename : null;
-    const info = db.prepare(`INSERT INTO reportes(codigo,nombre,email,telefono,ubicacion,tipo,descripcion,foto,fecha_creacion)
-      VALUES(?,?,?,?,?,?,?,?,?)`).run(codigo, nombre.trim(), email.trim(), telefono || null, ubicacion, tipo, descripcion || null, foto, fecha);
+    const info = db.prepare(`INSERT INTO reportes(codigo,nombre,email,telefono,ubicacion,lat,lng,tipo,descripcion,foto,fecha_creacion)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(codigo, nombre.trim(), email.trim(), telefono || null, ubicacion,
+      +lat.toFixed(6), +lng.toFixed(6), tipo, descripcion || null, foto, fecha);
     db.prepare("INSERT INTO historial(reporte_id,estado,observacion,fecha) VALUES(?,?,?,?)")
       .run(info.lastInsertRowid, "Reporte recibido", "Reporte registrado en EcoAlerta.", fecha);
     res.json({ codigo });
@@ -81,25 +84,28 @@ app.post("/api/reportes", upload.single("foto"), (req, res) => {
 
 // Vista pública: solo datos no personales del reporte.
 app.get("/api/reportes/:codigo", (req, res) => {
-  const r = db.prepare("SELECT id,codigo,ubicacion,tipo,prioridad,estado_actual,fecha_creacion FROM reportes WHERE codigo=?").get(req.params.codigo.trim().toUpperCase());
+  const r = db.prepare("SELECT id,codigo,ubicacion,lat,lng,tipo,prioridad,estado_actual,fecha_creacion FROM reportes WHERE codigo=?").get(req.params.codigo.trim().toUpperCase());
   if (!r) return res.status(404).json({ error: "No encontramos un reporte con ese código." });
   r.historial = historialDe(r.id); delete r.id;
   res.json(r);
 });
 
-// Puntos del mapa público. Se desplaza cada punto unos metros de forma estable
-// para que los reportes de una misma ubicación no queden encimados.
+// Puntos del mapa público. Los reportes nuevos traen coordenadas exactas;
+// los anteriores al cambio usan la ubicación fija, desplazada unos metros
+// de forma estable para que no queden encimados.
+function coordenadasDe(r) {
+  if (r.lat != null && r.lng != null) return [r.lat, r.lng];
+  const base = UBICACIONES[r.ubicacion];
+  if (!base) return null;
+  const ang = (r.id * 137.508) * Math.PI / 180, rad = 0.0006 * Math.sqrt((r.id % 7) + 1);
+  return [base[0] + rad * Math.sin(ang), base[1] + rad * Math.cos(ang)];
+}
 app.get("/api/mapa", (_, res) => {
-  const rows = db.prepare("SELECT id,codigo,tipo,ubicacion,estado_actual,prioridad,fecha_creacion FROM reportes ORDER BY fecha_creacion DESC").all();
-  res.json(rows.filter(r => UBICACIONES[r.ubicacion]).map(r => {
-    const [lat, lng] = UBICACIONES[r.ubicacion];
-    const ang = (r.id * 137.508) * Math.PI / 180, rad = 0.0006 * Math.sqrt((r.id % 7) + 1);
-    return {
-      codigo: r.codigo, tipo: r.tipo, ubicacion: r.ubicacion, estado: r.estado_actual,
-      prioridad: r.prioridad, fecha: r.fecha_creacion,
-      lat: lat + rad * Math.sin(ang), lng: lng + rad * Math.cos(ang)
-    };
-  }));
+  const rows = db.prepare("SELECT id,codigo,tipo,ubicacion,lat,lng,estado_actual,prioridad,fecha_creacion FROM reportes ORDER BY fecha_creacion DESC").all();
+  res.json(rows.map(r => ({ r, c: coordenadasDe(r) })).filter(x => x.c).map(({ r, c }) => ({
+    codigo: r.codigo, tipo: r.tipo, ubicacion: r.ubicacion, estado: r.estado_actual,
+    prioridad: r.prioridad, fecha: r.fecha_creacion, lat: c[0], lng: c[1]
+  })));
 });
 
 app.get("/api/resumen", (_, res) => {

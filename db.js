@@ -18,8 +18,20 @@ CREATE TABLE IF NOT EXISTS historial (
 );
 `);
 
-// Coordenadas aproximadas de las ubicaciones habilitadas en el formulario.
-// Evitan depender de un servicio de geocodificación externo.
+// Migración: coordenadas exactas elegidas por el ciudadano en el mapa.
+const columnas = db.prepare("PRAGMA table_info(reportes)").all().map(c => c.name);
+if (!columnas.includes("lat")) db.exec("ALTER TABLE reportes ADD COLUMN lat REAL");
+if (!columnas.includes("lng")) db.exec("ALTER TABLE reportes ADD COLUMN lng REAL");
+
+// Límites aproximados de República Dominicana (incluye una franja de la frontera).
+const LIMITES_RD = { latMin: 17.36, latMax: 19.95, lngMin: -72.01, lngMax: -68.32 };
+const dentroDeRD = (lat, lng) =>
+  Number.isFinite(lat) && Number.isFinite(lng) &&
+  lat >= LIMITES_RD.latMin && lat <= LIMITES_RD.latMax &&
+  lng >= LIMITES_RD.lngMin && lng <= LIMITES_RD.lngMax;
+
+// Coordenadas de las ubicaciones fijas que usaba la versión anterior.
+// Se conservan para ubicar en el mapa los reportes registrados antes del cambio.
 const UBICACIONES = {
   "Parque Duarte, Moca, República Dominicana": [19.3936, -70.5256],
   "Calle 27 de Febrero, Moca, República Dominicana": [19.3912, -70.5218],
@@ -41,4 +53,4 @@ const ESTADOS = [
 
 const PRIORIDADES = ["Baja", "Media", "Alta", "Crítica"];
 
-module.exports = { db, UBICACIONES, TIPOS, ESTADOS, PRIORIDADES };
+module.exports = { db, UBICACIONES, TIPOS, ESTADOS, PRIORIDADES, LIMITES_RD, dentroDeRD };

@@ -1,7 +1,7 @@
 // Carga datos de demostración para presentaciones.
 // ATENCIÓN: borra todos los reportes existentes antes de insertar los de ejemplo.
 // Uso: npm run demo
-const { db, ESTADOS } = require("./db");
+const { db, ESTADOS, UBICACIONES } = require("./db");
 
 const DIA = 24 * 60 * 60 * 1000;
 const ahora = Date.now();
@@ -35,15 +35,18 @@ const reset = db.transaction(() => {
   db.prepare("DELETE FROM reportes").run();
   db.prepare("DELETE FROM sqlite_sequence WHERE name IN ('reportes','historial')").run();
 
-  const insR = db.prepare(`INSERT INTO reportes(codigo,nombre,email,telefono,ubicacion,tipo,descripcion,prioridad,responsable,estado_actual,fecha_creacion)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?)`);
+  const insR = db.prepare(`INSERT INTO reportes(codigo,nombre,email,telefono,ubicacion,lat,lng,tipo,descripcion,prioridad,responsable,estado_actual,fecha_creacion)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`);
   const insH = db.prepare("INSERT INTO historial(reporte_id,estado,observacion,fecha) VALUES(?,?,?,?)");
 
   casos.forEach(([nombre, ubic, tipo, desc, prio, nivel, resp, diasAtras], i) => {
     const creado = ahora - diasAtras * DIA;
     const codigo = "EA-" + String(26100000 + i * 731 + 17).padStart(8, "0") + String(10 + i * 7).slice(-2);
     const email = nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(" ", ".") + "@correo.com";
-    const info = insR.run(codigo, nombre, email, "809-5" + String(780000 + i * 1373).slice(0, 6), ubic, tipo, desc, prio, resp, ESTADOS[nivel], new Date(creado).toISOString());
+    // Punto cercano a la ubicación de referencia, separado unos metros de los demás.
+    const [bLat, bLng] = UBICACIONES[ubic], ang = i * 2.39996, rad = 0.0007 * Math.sqrt(i + 1);
+    const lat = +(bLat + rad * Math.sin(ang)).toFixed(6), lng = +(bLng + rad * Math.cos(ang)).toFixed(6);
+    const info = insR.run(codigo, nombre, email, "809-5" + String(780000 + i * 1373).slice(0, 6), ubic, lat, lng, tipo, desc, prio, resp, ESTADOS[nivel], new Date(creado).toISOString());
     insH.run(info.lastInsertRowid, "Reporte recibido", "Reporte registrado en EcoAlerta.", new Date(creado).toISOString());
     for (let n = 1; n <= nivel; n++) {
       const t = creado + (diasAtras * DIA * 0.85) * (n / (nivel + 0.5));

@@ -9,6 +9,7 @@ Versión evolutiva del prototipo original de EcoAlerta.
 - Persistencia real en SQLite.
 - Consulta de ticket e historial.
 - Mapa con Leaflet/OpenStreetMap.
+- Ubicación libre: el ciudadano marca el punto en el mapa o usa la ubicación de su dispositivo (validada dentro de República Dominicana).
 - Panel administrativo.
 - Estados, prioridad, responsable y observaciones.
 - Indicadores básicos del panel.

@@ -61,7 +61,16 @@
       <legend>Detalle de la incidencia</legend>
       <div class="grid">
         <label>Tipo de reporte *<select name="tipo" required><option value="">Selecciona el tipo</option><option>Residuos Plásticos</option><option>Residuos Orgánicos</option><option>Residuos Metálicos</option><option>Contaminación Sónica</option><option>Residuos Pluviales</option><option>Acumulación de basura</option></select></label>
-        <label>Ubicación *<select name="ubicacion" required><option value="">Selecciona la ubicación</option><option>Parque Duarte, Moca, República Dominicana</option><option>Calle 27 de Febrero, Moca, República Dominicana</option><option>Calle Independencia, Moca, República Dominicana</option><option>Hospital Municipal de Fantino, República Dominicana</option><option>Calle Restauración, Fantino, República Dominicana</option><option>Parque Central, Santiago, República Dominicana</option></select></label>
+        <label>Referencia o dirección *<input name="ubicacion" required maxlength="200" placeholder="Ej. Frente a la escuela, calle Duarte, Moca"></label>
+        <div class="wide">
+          <div class="picker-head">
+            <span class="field-label">Ubicación en el mapa *</span>
+            <button type="button" class="btn ghost sm" id="miUbicacion">📍 Usar mi ubicación</button>
+          </div>
+          <div id="pickerMap" class="picker-map" tabindex="-1"><div class="map-fallback">Cargando mapa…</div></div>
+          <p class="picker-status" id="pickerStatus">Toca el mapa para marcar el lugar exacto de la incidencia.</p>
+          <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
+        </div>
         <label class="wide">Descripción<textarea name="descripcion" rows="3" placeholder="¿Qué está pasando? ¿Desde cuándo?"></textarea></label>
         <div class="wide">
           <span class="field-label">Evidencia fotográfica</span>
