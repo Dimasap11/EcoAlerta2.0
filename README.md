@@ -32,6 +32,15 @@ npm run demo
 
 **Atención:** este comando borra todos los reportes existentes antes de insertar los de ejemplo.
 
+## Respaldo
+Para crear una copia de seguridad de la base de datos y de las fotografías:
+
+```
+npm run respaldo
+```
+
+La copia se guarda en `respaldos/<fecha-hora>/` y puede hacerse con el servidor encendido. Para restaurar, detenga el servidor y reemplace `ecoalerta.db` y `public/uploads/` por los del respaldo.
+
 ## Acceso administrativo
 Las credenciales se configuran con las variables de entorno `ECO_ADMIN_USER` y `ECO_ADMIN_PASS`. Si no se definen, se usan los valores de desarrollo indicados en `server.js`.
 
